@@ -1,6 +1,6 @@
 ---
 name: partner-meeting-brief
-description: Prepare a brief for a meeting with a JointGlow partner, investor, referring physician, clinic host or vendor — pulls relevant Notion notes, email threads and calendar context into history, decisions, open questions and next steps. Use before a partner call, or when asked "what's the status with X" or "prep me for my meeting with X".
+description: Prepare a brief for a meeting with a JointGlow partner, investor, referring physician, clinic host or vendor — pulls relevant Notion notes, Gmail threads and Google Calendar context into history, decisions, open questions and next steps. Use before a partner call, or when asked "what's the status with X" or "prep me for my meeting with X".
 ---
 
 # Partner meeting brief
@@ -9,12 +9,12 @@ Get the user ready for a partner meeting in five minutes of reading.
 
 ## Gather (read-only)
 
-1. **Calendar**: find the meeting (Google Calendar, or Outlook through the Microsoft 365 connector). Note the time, attendees and agenda.
-2. **Notion**: search the partner's name, company, and the project or deal name. Read the most recent and most relevant pages: meeting notes, business updates, deal pages.
-3. **Email**: search Gmail and Outlook (if connected) for threads with the partner's people from the last 90 days. Read the latest thread in full.
+1. **Email (Gmail)**: run `search_threads` with the partner's name, company domain and deal keywords, limited to the last 90 days (for example `from:@partner.com OR to:@partner.com newer_than:90d`). Search results show only the oldest messages in each thread, so open the relevant threads with `get_thread` and read the newest messages in full.
+2. **Calendar (Google Calendar)**: find the meeting. Note the time, attendees and agenda. If the calendar isn't connected, ask the user for the time and attendees.
+3. **Notion**: search the partner's name, company, and the project or deal name. Read the most recent and most relevant pages: meeting notes, business updates, deal pages.
 4. **Public context**, only if useful: the partner's site, recent news. Date each item.
 
-List which sources you searched and which were unavailable, for example "Outlook not connected".
+List which sources you searched and which were unavailable, for example "Google Calendar not connected".
 
 ## Write the brief
 
@@ -31,4 +31,4 @@ Cite the source for every fact (Notion page title, email subject and date). Mark
 
 ## Limits
 
-Read only. Don't send or reply to email, accept invites, or edit Notion pages unless the user asks. You may offer a draft follow-up email for the user to send.
+Read only. Don't send or reply to email, accept invites, or edit Notion pages unless the user asks. You may offer a follow-up email, saved as a Gmail draft with `create_draft` only after the user says yes, for the user to review and send.

@@ -13,7 +13,7 @@ Cloud sessions start in a fresh container, so anything installed only in the con
 | `.claude/skills/*` | Four JointGlow workflows (see below). |
 | `brand/` | JointGlow logos taken from the clinic-app design export. |
 
-The claude.ai connectors (Notion, Gmail, Google Drive, Microsoft 365, Supermetrics) belong to your claude.ai account, not this repo. They follow you into every session once they're connected.
+The claude.ai connectors (Notion, Gmail, Google Calendar, Google Drive, Supermetrics) belong to your claude.ai account, not this repo. They follow you into every session once they're connected.
 
 ## What's installed
 
@@ -33,7 +33,7 @@ The claude.ai connectors (Notion, Gmail, Google Drive, Microsoft 365, Supermetri
 
 ## Remaining steps for you
 
-1. **Microsoft 365 / Outlook**: the connector is added but sign-in was not finished. Finish it at https://claude.ai/customize/connectors. If your Microsoft tenant requires it, a Microsoft 365 admin must approve the Claude app. Then start a new session.
+1. **Email is Gmail, not Outlook.** The Gmail connector works (a read-only search was verified on 2026-10-13). The partner meeting brief reads Gmail, and only saves a draft when you ask for one. **Google Calendar** is added to claude.ai but not connected. Connect it at https://claude.ai/customize/connectors and start a new session so meeting briefs can find your meetings. The unfinished Microsoft 365 connector isn't needed; remove it there if you like.
 2. **Supermetrics**: add the "Supermetrics Marketing Analytics" connector at https://claude.ai/customize/connectors, sign in to Supermetrics, then start a new session.
 3. **Context7 and general web access in cloud sessions**: in the cloud environment settings (environment menu, then Edit, then Network access), allow `mcp.context7.com` and `context7.com`, plus any sites you want Claude to research. Leave "Allow package managers" ticked. See https://code.claude.com/docs/en/cloud-environments#network-access.
 4. **Playwright in cloud sessions**: add these environment variables to the cloud environment so Playwright uses the browser already installed there:
