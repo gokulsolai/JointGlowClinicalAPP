@@ -361,14 +361,14 @@ function sevOf(v){ return v >= 65 ? ['Severe','var(--sev)'] : v >= 40 ? ['Modera
 
 function differential(e, c){
   const q = v => has(e,'quality',v), f = v => has(e,'findings',v), p = v => has(e,'provoke',v), cond = v => has(e,'conditions',v);
-  const age = +e.age || 0, kl = e.kl === '' ? null : +e.kl;
+  const age = +e.age || null, kl = e.kl === '' ? null : +e.kl;   // unknown age fires no age rule
   const icdOA = {Right:'M17.11', Left:'M17.12', Both:'M17.0'}[e.side] || 'M17.1-';
   const D = [
     {id:'oa_inf', name:'Knee osteoarthritis, inflammatory flare', icd:icdOA, next:'Ultrasound for effusion/synovitis; trial of anti-inflammatory treatment.', rules:[
-      [age >= 40, 2, 'age 40+'], [c.syn >= 30, 3, 'swelling / synovitis'], [kl != null && kl >= 1 && kl <= 3, 2, 'KL grade ' + kl], [e.stiffness === '<30 min' || e.stiffness === '30–60 min', 1, 'short morning stiffness'],
+      [age != null && age >= 40, 2, 'age 40+'], [c.syn >= 30, 3, 'swelling / synovitis'], [kl != null && kl >= 1 && kl <= 3, 2, 'KL grade ' + kl], [e.stiffness === '<30 min' || e.stiffness === '30–60 min', 1, 'short morning stiffness'],
       [e.onset === 'Gradual, over months', 1, 'gradual onset'], [f('Effusion / synovitis'), 2, 'effusion on imaging'], [e.onset === 'After an injury or twist', -2, 'injury onset argues against']]},
     {id:'oa_str', name:'Knee osteoarthritis, structural', icd:icdOA, next:'Weight-bearing X-rays to stage; track joint space over time.', rules:[
-      [age >= 45, 2, 'age 45+'], [kl != null && kl >= 2, 3, 'KL grade ' + kl], [f('Osteophytes'), 1, 'osteophytes'], [e.crepitus === 'Marked' || e.crepitus === 'Mild', 1, 'crepitus'],
+      [age != null && age >= 45, 2, 'age 45+'], [kl != null && kl >= 2, 3, 'KL grade ' + kl], [f('Osteophytes'), 1, 'osteophytes'], [e.crepitus === 'Marked' || e.crepitus === 'Mild', 1, 'crepitus'],
       [p('Stairs') || p('Getting up from a chair'), 1, 'pain with stairs or chairs'], [e.alignment !== '' && e.alignment !== 'Neutral', 1, 'malalignment'], [e.jsw !== '' && e.jsw < 3, 2, 'joint space < 3 mm']]},
     {id:'menisc', name:'Meniscal tear', icd:'M23.2-', next:'MRI if not done; orthopedic or sports medicine review.', rules:[
       [q('Locking / catching'), 3, 'locking or catching'], [e.mcmurray === 'Positive', 3, 'positive McMurray'], [e.onset === 'After an injury or twist', 2, 'twisting injury'],
@@ -376,7 +376,7 @@ function differential(e, c){
     {id:'lig', name:'Ligament injury / instability', icd:'M23.5-', next:'Stress testing and MRI; orthopedic review.', rules:[
       [q('Giving way'), 3, 'giving way'], [e.stability !== '' && e.stability !== 'Stable', 4, e.stability], [e.onset === 'After an injury or twist', 2, 'injury onset'], [f('Ligament tear'), 3, 'ligament tear on MRI']]},
     {id:'pfps', name:'Patellofemoral pain', icd:'M22.2-', next:'Examine patellar tracking; hip and quad strengthening.', rules:[
-      [p('Stairs'), 1, 'stairs'], [p('Getting up from a chair'), 1, 'rising from a chair'], [p('Kneeling or squatting'), 1, 'squatting'], [age < 45, 2, 'younger age'], [kl != null && kl <= 1, 1, 'little arthritis on imaging']]},
+      [p('Stairs'), 1, 'stairs'], [p('Getting up from a chair'), 1, 'rising from a chair'], [p('Kneeling or squatting'), 1, 'squatting'], [age != null && age < 45, 2, 'younger age'], [kl != null && kl <= 1, 1, 'little arthritis on imaging']]},
     {id:'tend', name:'Pes anserine bursitis / tendinopathy', icd:'M70.5-', next:'Palpate below the medial joint line; ultrasound if unclear.', rules:[
       [has(e,'jlt','Medial'), 1, 'medial pain'], [cond('Diabetes'), 1, 'diabetes'], [(bmiOf(e) || 0) >= 30, 1, 'BMI 30+'], [p('Stairs'), 1, 'stairs'], [kl != null && kl <= 2, 1, 'mild arthritis only']]},
     {id:'crystal', name:'Gout or pseudogout', icd:'M10.- / M11.2-', next:'Joint aspiration for crystals; uric acid.', rules:[
@@ -386,40 +386,43 @@ function differential(e, c){
       [has(e,'otherJoints','Hands / thumb'), 2, 'hand joints involved'], [(e.otherJoints || []).length >= 2, 1, 'several joints']]},
     {id:'hip', name:'Pain referred from the hip', icd:'M25.55-', next:'Examine hip rotation; hip X-ray.', rules:[
       [e.radiation === 'Hip or groin too', 3, 'hip or groin pain'], [e.radiation === 'Up the thigh', 2, 'pain up the thigh'], [has(e,'otherJoints','Hip'), 2, 'hip listed as painful'], [kl != null && kl <= 1, 1, 'knee imaging near normal']]},
-    {id:'septic', name:'Septic arthritis', icd:'M00.9', red:true, next:'Same-day aspiration and emergency evaluation.', rules:[
-      [has(e,'conditions','Fever or feeling unwell now'), 3, 'fever / unwell'], [e.temp !== '' && e.temp >= 38, 3, 'temperature ≥ 38 °C'], [e.warmth === 'Yes', 1, 'warm'], [e.redness === 'Yes', 1, 'red'], [e.effusion === 'Large' || e.effusion === 'Moderate', 1, 'effusion']]}
+    {id:'septic', name:'Septic arthritis', icd:'M00.9', red:true, next:'Same-day aspiration and emergency evaluation. Absence of fever does not exclude it.', rules:[
+      [has(e,'conditions','Fever or feeling unwell now'), 3, 'fever / unwell'], [e.temp !== '' && e.temp >= 38, 3, 'temperature ≥ 38 °C'], [e.warmth === 'Yes', 2, 'warm'], [e.redness === 'Yes', 1, 'red'], [e.effusion === 'Large' || e.effusion === 'Moderate', 2, 'effusion'],
+      [e.onset === 'Sudden, no injury', 1, 'sudden onset'], [e.bearWeight === 'No', 1, 'cannot bear weight']]}
   ];
+  // Septic arthritis is shown (and the infection red flag raised) only with a joint sign on exam and 5+ points.
+  const jointSign = e.warmth === 'Yes' || e.effusion === 'Large' || e.effusion === 'Moderate';
   const scored = D.map(d => {
     let s = 0; const clues = [];
     d.rules.forEach(([ok, pts, txt]) => { if (ok) { s += pts; if (pts > 0) clues.push(txt); } });
     return Object.assign({}, d, {score:Math.max(0, s), clues});
-  }).filter(d => d.score > 0 && !(d.id === 'septic' && d.score < 5)).sort((a, b) => b.score - a.score);
+  }).filter(d => d.score > 0 && !(d.id === 'septic' && (d.score < 5 || !jointSign))).sort((a, b) => b.score - a.score);
   const top = scored.length ? scored[0].score : 1;
   scored.forEach((d, i) => { const r = d.score / top; d.like = i === 0 ? 'Leading' : r >= .7 ? 'Likely' : r >= .4 ? 'Possible' : 'Less likely'; d.pct = Math.round(r * 100); });
   return scored;
 }
-function redFlags(e){
+function redFlags(e, ddx){
   const out = [];
-  const fever = has(e,'conditions','Fever or feeling unwell now') || (e.temp !== '' && e.temp >= 38);
-  if (fever && (e.warmth === 'Yes' || e.effusion === 'Large' || e.effusion === 'Moderate')) out.push(['Possible joint infection', 'Fever with a hot, swollen knee needs same-day aspiration. Do not treat until infection is ruled out.']);
+  if ((ddx || []).some(d => d.id === 'septic')) out.push(['Possible joint infection', 'A hot or swollen knee with fever, or an acutely hot, swollen knee without fever, needs same-day aspiration. Absence of fever does not exclude infection. Do not treat until it is ruled out.']);
   if (e.bearWeight === 'No' && e.onset === 'After an injury or twist') out.push(['Possible fracture', 'Cannot bear weight after injury. X-ray before anything else (Ottawa knee rule).']);
   if (has(e,'conditions','Unexplained weight loss') && (has(e,'timing','Wakes me at night') || has(e,'provoke','At rest / night'))) out.push(['Night pain with weight loss', 'Rule out tumour or infection before treating as arthritis.']);
   if (e.redness === 'Yes' && e.onset === 'Sudden, no injury') out.push(['Hot red joint', 'Consider gout or pseudogout; aspirate if unsure.']);
   return out;
 }
 function analyze(e){
-  const c = compartments(e), bmi = bmiOf(e), kl = e.kl === '' ? null : +e.kl, age = +e.age || 50;
+  const c = compartments(e), bmi = bmiOf(e), kl = e.kl === '' ? null : +e.kl;
+  const ageKnown = e.age !== '' && +e.age > 0, age = ageKnown ? +e.age : 50;   // 50 is used only to draw the curves; every gate checks ageKnown
   const H0 = Math.round(clamp(100 - (0.20*c.syn + 0.35*c.cart + 0.25*c.bone + 0.20*c.sup), 5, 100));
   const jointAge = Math.round(clamp(30 + (100 - H0) / 1.2, 20, 99));
   const decline = 0.85 * (0.5 + 0.04*Math.max(0, age - 40) + 0.3*(kl || 0) + 0.012*c.syn + 0.08*Math.max(0, (bmi || 25) - 25) + (c.sup > 40 ? 0.3 : 0));
   const driver = Object.keys(c).sort((a, b) => c[b] - c[a])[0];
-  const ddx = differential(e, c), flags = redFlags(e);
+  const ddx = differential(e, c), flags = redFlags(e, ddx);
   const pain = e.painNow === '' ? 5 : +e.painNow;
-  return {c, bmi, kl, age, H0, jointAge, decline, driver, ddx, flags, pain};
+  return {c, bmi, kl, age, ageKnown, H0, jointAge, decline, driver, ddx, flags, pain};
 }
 
 /* Treatment options. Effects are illustrative model assumptions, not trial results. */
-function early(a){ return clamp(1 - 0.15*(a.kl || 0) - 0.012*Math.max(0, a.age - 45), 0.3, 1); }
+function early(a, delay){ return clamp(1 - 0.15*(a.kl || 0) - 0.012*Math.max(0, a.age + (delay || 0) - 45), 0.3, 1); }   // age at the start of treatment
 const TX = {
   none:{name:'No treatment', mult:() => 1, relief:() => 0, onsetY:0, visits:[1,1], hrs:2, oop:'—', onsetTxt:'—', lasts:'—',
     does:'Let the knee follow its natural course.', fx:{syn:0, cart:0, bone:0, sup:0},
@@ -428,20 +431,20 @@ const TX = {
     does:'Pills that reduce inflammation and pain while you take them.', fx:{syn:1, cart:0, bone:0, sup:0},
     ev:'Good short-term pain relief. Long-term daily use raises stomach, kidney and heart risks; guidelines prefer topical NSAIDs where possible (ACR 2019).'},
   steroid:{name:'Steroid injections', mult:() => 1.1, relief:() => 0.25, onsetY:0, visits:[5,5], hrs:2, oop:'$', onsetTxt:'1–3 days', lasts:'4–8 weeks per shot',
-    does:'A strong anti-inflammatory shot into the joint, usually repeated every 3 months.', fx:{syn:1, cart:-1, bone:0, sup:0},
-    ev:'Short-term relief. In a 2-year trial, shots every 3 months caused more cartilage loss than saline and no better pain control (McAlindon et al., JAMA 2017).'},
+    does:'A strong anti-inflammatory shot into the joint, given no more often than every 3 months. The arc models a repeated 3-monthly course.', fx:{syn:1, cart:-1, bone:0, sup:0},
+    ev:'Guidelines recommend steroid injections for short-term relief of knee OA pain (ACR 2019, OARSI 2019). One 2-year trial of injections every 3 months found more cartilage loss than saline and no better pain control (McAlindon et al., JAMA 2017), so repeated courses are used cautiously.'},
   pt:{name:'Physical therapy', mult:(e,a) => 1 - 0.3*a.c.sup/100 - 0.05, relief:() => 0.3, onsetY:0.15, visits:[16,4], hrs:1.5, oop:'$$', onsetTxt:'4–8 weeks', lasts:'As long as exercises continue',
     does:'Strengthens the muscles that steady and offload the knee.', fx:{syn:0, cart:1, bone:0, sup:1},
     ev:'Strong evidence; exercise is a first-line treatment in every major guideline (ACR 2019, OARSI 2019).'},
-  prp:{name:'PRP injections', mult:() => 0.93, relief:() => 0.35, onsetY:0.1, visits:[3,1], hrs:2, oop:'$$$', onsetTxt:'4–6 weeks', lasts:'6–12 months',
+  prp:{name:'PRP injections', mult:() => 0.93, relief:() => 0.35, onsetY:0.1, visits:[3,1], hrs:2, oop:'$$$', onsetTxt:'4–6 weeks', lasts:'Unclear',
     does:'Injections made from your own blood platelets.', fx:{syn:1, cart:0, bone:0, sup:0},
-    ev:'Mixed evidence. A 2021 randomized trial found no difference from saline at 12 months (Bennell et al., JAMA 2021). Usually self-pay.'},
-  ldrt:{name:'Low-dose radiation therapy (LDRT)', mult:(e,a) => 1 - 0.45*(a.c.syn/100)*early(a), relief:(e,a) => 0.55*early(a), onsetY:0.2, visits:[15,1], hrs:1.25, oop:'$$', onsetTxt:'Builds over 6–12 weeks', lasts:'Often 1–2 years; can be repeated',
-    does:'Ten short, painless sessions of very low-dose X-rays that calm the inflamed joint lining.', fx:{syn:1, cart:1, bone:0, sup:0},
-    ev:'Large retrospective series, mostly from Germany, report pain response in roughly 60–80% of patients (e.g., Keller et al., 2013). Two small sham-controlled Dutch trials found no difference from sham (Mahler et al., 2019). Evidence is still developing.'},
+    ev:'Mixed evidence. The largest placebo-controlled trial found no difference from saline at 12 months (Bennell et al., JAMA 2021), and the ACR 2019 guideline recommends against it. Usually self-pay.'},
+  ldrt:{name:'Low-dose radiation therapy (LDRT)', mult:(e,a,ef) => 1 - 0.45*(a.c.syn/100)*ef, relief:(e,a,ef) => 0.55*ef, onsetY:0.2, visits:[15,1], hrs:1.25, oop:'$$', onsetTxt:'Builds over 6–12 weeks', lasts:'Varies; long-term data come from uncontrolled series. A second course is sometimes given.',
+    does:'Ten short, painless sessions of very low-dose X-rays. Thought to reduce inflammation in the joint lining; shown in laboratory studies, not yet confirmed in controlled trials in patients.', fx:{syn:1, cart:0, bone:0, sup:0},
+    ev:'Uncontrolled German series (e.g., Keller et al., Radiat Oncol 2013) report pain improvement in a majority of patients, using 0.5–1 Gy fractions to 3–6 Gy; without a sham group the placebo contribution is unknown. A small sham-controlled knee trial (55 patients, 6 × 1 Gy) found no difference from sham at 3 months (Mahler et al., Ann Rheum Dis 2019); a companion hand trial was also negative (Minten et al., 2018). The clinic’s 4.5 Gy in 10 fractions schedule has not been studied in those reports. Evidence is still developing.'},
   stem:{name:'Stem cells / orthobiologics', mult:() => 0.96, relief:() => 0.3, onsetY:0.2, visits:[2,0.5], hrs:2, oop:'$$$$', onsetTxt:'1–3 months', lasts:'Unclear',
     does:'Injections of processed cells from fat or bone marrow.', fx:{syn:1, cart:0, bone:0, sup:0},
-    ev:'Limited, low-quality evidence. Not FDA-approved for knee arthritis; almost always self-pay.'},
+    ev:'Limited, low-quality evidence. The ACR 2019 guideline strongly recommends against stem-cell injections for knee OA. Not FDA-approved for arthritis; almost always self-pay.'},
   tka:{name:'Knee replacement', special:true, mult:() => 1, relief:() => 0, onsetY:0.5, visits:[30,1], hrs:2, extraHrs:240, oop:'Insurance; high total cost', onsetTxt:'3–6 months recovery', lasts:'Most implants last 15–20+ years',
     does:'Surgery that replaces the worn joint surfaces with metal and plastic.', fx:{syn:1, cart:1, bone:1, sup:0},
     ev:'Strong evidence for end-stage arthritis. About 1 in 5 patients remain dissatisfied (Bourne et al., 2010). Reserved for severe disease.'}
@@ -451,7 +454,7 @@ function cautions(id, e, a){
   const w = [], cond = v => has(e,'conditions',v);
   if (id === 'nsaid') { if (cond('Stomach ulcer / GI bleed')) w.push('Avoid: history of stomach bleeding.'); if (cond('Kidney disease')) w.push('Avoid: kidney disease.'); if (cond('Blood thinners')) w.push('Bleeding risk with blood thinners.'); if (cond('Heart disease')) w.push('Heart risk; use lowest dose briefly.'); }
   if (id === 'steroid') { if (cond('Diabetes')) w.push('Raises blood sugar for several days.'); if ((+e.steroidCount || 0) >= 3) w.push(e.steroidCount + ' shots already; repeated shots may speed cartilage loss.'); }
-  if (id === 'ldrt') { if (a.age < 40) w.push('Under 40: radiation is generally not offered for benign disease; discuss carefully.'); if (e.pregnancy === 'Yes' || e.pregnancy === 'Unsure') w.push('Not during pregnancy; confirm status.'); if (cond('Prior radiation to this knee')) w.push('Prior radiation here: physician must review cumulative dose.'); }
+  if (id === 'ldrt') { if (!a.ageKnown) w.push('Age not recorded; eligibility (age 40+) cannot be assessed.'); else if (a.age < 40) w.push('Under 40: radiation is generally not offered for benign disease; discuss carefully.'); if (e.pregnancy === 'Yes' || e.pregnancy === 'Unsure') w.push('Not during pregnancy; confirm status.'); if (cond('Prior radiation to this knee')) w.push('Prior radiation here: physician must review cumulative dose.'); }
   if (id === 'tka' && !tkaEligible(a)) w.push('Not indicated now; considered at end-stage arthritis.');
   return w;
 }
@@ -459,7 +462,7 @@ function tkaEligible(a){ return (a.kl != null && a.kl >= 3 && a.H0 < 50) || a.H0
 
 function project(e, a, id, delay){
   const tx = TX[id], step = 0.25, out = [];
-  const start = id === 'none' ? Infinity : delay;
+  const start = id === 'none' ? Infinity : delay, ef = early(a, delay);
   let tkaAt = null;
   if (id === 'tka') {
     if (tkaEligible(a)) tkaAt = delay + tx.onsetY;
@@ -471,7 +474,7 @@ function project(e, a, id, delay){
     if (i > 0) {
       const accel = 1 + Math.max(0, a.H0 - H) / 100 * 0.4;
       if (replaced) H -= 0.4 * step;
-      else H -= a.decline * (t > start && !tx.special ? tx.mult(e, a) : 1) * accel * step;
+      else H -= a.decline * (t > start && !tx.special ? tx.mult(e, a, ef) : 1) * accel * step;
       if (tkaAt != null && !replaced && t >= tkaAt) { H = 82; replaced = true; }
       H = Math.max(5, H);
     }
@@ -479,7 +482,7 @@ function project(e, a, id, delay){
     let pain = base;
     if (replaced) pain = 2;
     else if (tkaAt != null && t >= tkaAt - tx.onsetY) pain = Math.min(10, base + 2);
-    else if (t > start && t >= start + tx.onsetY) pain = base * (1 - tx.relief(e, a));
+    else if (t > start && t >= start + tx.onsetY) pain = base * (1 - tx.relief(e, a, ef));
     const fn = clamp(0.55 * H + 45 * (1 - pain / 10), 0, 100);
     out.push({t, H, pain, fn});
   }
@@ -496,7 +499,7 @@ function planSteps(e, a){
   const top = a.ddx[0] ? a.ddx[0].id : null, oaRank = a.ddx.findIndex(d => d.id.startsWith('oa'));
   if (a.flags.length) st.push(['flags', 'Resolve red flags first', a.flags.map(f => f[0]).join('; ') + '.']);
   if (top === 'menisc' || top === 'lig') st.push(['ortho', 'Orthopedic / sports medicine review', 'Mechanical symptoms point to a ' + (top === 'menisc' ? 'meniscal tear' : 'ligament injury') + '. MRI if not already done.']);
-  const ldrtOk = a.age >= 40 && e.pregnancy !== 'Yes' && !has(e,'conditions','Prior radiation to this knee') && oaRank >= 0 && oaRank <= 1 && !a.flags.length;
+  const ldrtOk = a.ageKnown && a.age >= 40 && e.pregnancy !== 'Yes' && e.pregnancy !== 'Unsure' && !has(e,'conditions','Prior radiation to this knee') && oaRank >= 0 && oaRank <= 1 && !a.flags.length;
   if (ldrtOk) {
     const others = (e.otherJoints || []).filter(j => j !== 'Spine');
     st.push(['ldrt', 'LDRT to the ' + side + (others.length ? ' (+ ' + others.join(', ').toLowerCase() + ')' : ''), 'Radiation oncology consult (77263). Prescription set by the physician; the protocol most often seen in charts is 4.5 Gy in 10 fractions over 2–3 weeks.' + (others.length ? ' Several painful joints can be treated in the same course.' : '')]);
@@ -512,6 +515,7 @@ function planSteps(e, a){
 
 /* Encounter completeness for a complete consult note */
 const REQ = [
+  ['age','Age', e => e.age !== '' && +e.age > 0, 'How old are you? (Age gates LDRT eligibility and the differential.)'],
   ['onset','Onset', e => !!e.onset && e.duration !== '', 'When did the knee pain start, and did anything set it off?'],
   ['provoke','Worse / better with', e => e.provoke.length || e.palliate.length, 'What makes the pain worse? What helps?'],
   ['quality','Quality of pain', e => e.quality.length, 'How would you describe it: aching, sharp, locking, giving way?'],
@@ -603,8 +607,8 @@ function arcSVG(e, a, ids, delay){
   s += '<rect x="' + L + '" y="' + y(40) + '" width="' + iw + '" height="' + (y(0) - y(40)) + '" fill="var(--zone-bad)" fill-opacity=".08"/>';
   [0,20,40,60,80,100].forEach(v => { s += '<line x1="' + L + '" x2="' + (L + iw) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="var(--line)" stroke-width="1"/><text class="c-ax" x="' + (L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + v + '</text>'; });
   s += '<text class="c-zone" x="' + (L + iw - 6) + '" y="' + (y(100) + 14) + '" text-anchor="end">Healthy</text><text class="c-zone" x="' + (L + iw - 6) + '" y="' + (y(70) + 14) + '" text-anchor="end">Symptomatic</text><text class="c-zone" x="' + (L + iw - 6) + '" y="' + (y(40) + 14) + '" text-anchor="end">End-stage</text>';
-  [0,5,10,15,20].forEach(t => { s += '<text class="c-ax" x="' + x(t) + '" y="' + (T + ih + 18) + '" text-anchor="middle">' + (a.age + t) + '</text>'; });
-  s += '<text class="c-ax" x="' + (L + iw / 2) + '" y="' + (H - 4) + '" text-anchor="middle">Age</text>';
+  [0,5,10,15,20].forEach(t => { s += '<text class="c-ax" x="' + x(t) + '" y="' + (T + ih + 18) + '" text-anchor="middle">' + (a.ageKnown ? a.age + t : (t ? '+' + t : 'now')) + '</text>'; });
+  s += '<text class="c-ax" x="' + (L + iw / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + (a.ageKnown ? 'Age' : 'Years from today') + '</text>';
   [0,10,20].forEach(t => { s += '<line x1="' + x(t) + '" x2="' + x(t) + '" y1="' + T + '" y2="' + (T + ih) + '" stroke="var(--muted)" stroke-dasharray="3 4" stroke-width="1" opacity=".6"/>'; });
   if (delay > 0) s += '<line x1="' + x(delay) + '" x2="' + x(delay) + '" y1="' + T + '" y2="' + (T + ih) + '" stroke="var(--gold-deep)" stroke-width="1.5"/><text class="c-ax" x="' + (x(delay) + 4) + '" y="' + (T + 10) + '">start</text>';
   const ends = [];
@@ -676,7 +680,7 @@ function viewA(){
   const flags = a.flags.map(f => '<div class="flag" role="alert"><span aria-hidden="true">⚠</span><div><b>' + esc(f[0]) + '</b>' + esc(f[1]) + '</div></div>').join('');
   const ddx = a.ddx.slice(0, 4);
   return '<div class="pagehead"><div><span class="eyebrow">Assessment</span><h1>' + esc(e.name || 'Patient') + '’s ' + (e.side === 'Both' ? 'knees' : (e.side ? e.side.toLowerCase() + ' knee' : 'knee')) + '</h1><p>Four areas of the knee, scored from the history and exam, compared with a healthy knee.</p></div></div>' + flags +
-    '<div class="kpis"><div class="kpi hero"><div class="v num">' + a.jointAge + ' <small>yrs</small></div><div class="k">Joint age · actual age ' + a.age + '</div></div>' +
+    '<div class="kpis"><div class="kpi hero"><div class="v num">' + a.jointAge + ' <small>yrs</small></div><div class="k">Joint age · ' + (a.ageKnown ? 'actual age ' + a.age : 'age not recorded') + '</div></div>' +
     '<div class="kpi"><div class="v num">' + a.H0 + '<small> / 100</small></div><div class="k">Joint health score today</div></div>' +
     '<div class="kpi"><div class="v" style="font-size:19px;padding-top:8px">' + AREAS[a.driver].name + '</div><div class="k">Main driver of symptoms</div></div>' +
     '<div class="kpi"><div class="v" style="font-size:19px;padding-top:8px">' + (ddx[0] ? esc(ddx[0].name.replace('Knee osteoarthritis', 'Osteoarthritis')) : '—') + '</div><div class="k">Leading diagnosis</div></div></div>' +
@@ -700,15 +704,15 @@ function viewP(){
   const rows = S.show.map(id => { const pts = project(e, a, id, S.delay), b = burden(id, a, hourly), p3 = pts[12], p10 = pts[40], p20 = pts[80];
     return '<tr><td><span class="sw" style="background:var(--tx-' + id + ')"></span>' + esc(TX[id].name) + '</td><td class="num">' + r1(pts[0].pain) + ' → ' + r1(p3.pain) + '</td><td class="num">' + Math.round(pts[0].fn) + ' → ' + Math.round(p3.fn) + '</td><td class="num">' + Math.round(p10.H) + '</td><td class="num">' + Math.round(p20.H) + '</td><td class="num">' + b.visits + '</td><td class="num">' + b.hours + ' h</td><td class="num">$' + b.cost.toLocaleString() + '</td></tr>'; }).join('');
   const steps = planSteps(e, a);
-  return '<div class="pagehead"><div><span class="eyebrow">Plan</span><h1>Options & joint arc</h1><p>What each option does to the four areas, and how the joint is projected to change from age ' + a.age + ' to ' + (a.age + 20) + '.</p></div></div>' +
+  return '<div class="pagehead"><div><span class="eyebrow">Plan</span><h1>Options & joint arc</h1><p>What each option does to the four areas, and how the joint is projected to change ' + (a.ageKnown ? 'from age ' + a.age + ' to ' + (a.age + 20) : 'over the next 20 years') + '.</p></div></div>' +
     '<section class="card"><h2>Treatment options</h2><p class="sub">Turn options on to compare them on the arc. Warnings are specific to this patient.</p><div class="opts">' + cards + '</div></section>' +
     '<section class="card chart"><h2>Joint arc</h2><p class="sub">Projected joint health score (0–100). Markers at today, +10 and +20 years.</p>' +
-    '<div class="row" style="margin-bottom:10px"><span class="muted" style="font-size:13px" id="delay-l">Start treatment</span><div class="chips" role="radiogroup" aria-labelledby="delay-l">' + [0,5,10].map(d => '<button type="button" class="chip" role="radio" aria-checked="' + (S.delay === d) + '" data-delay="' + d + '">' + (d ? 'In ' + d + ' years (age ' + (a.age + d) + ')' : 'Now') + '</button>').join('') + '</div></div>' +
+    '<div class="row" style="margin-bottom:10px"><span class="muted" style="font-size:13px" id="delay-l">Start treatment</span><div class="chips" role="radiogroup" aria-labelledby="delay-l">' + [0,5,10].map(d => '<button type="button" class="chip" role="radio" aria-checked="' + (S.delay === d) + '" data-delay="' + d + '">' + (d ? 'In ' + d + ' years' + (a.ageKnown ? ' (age ' + (a.age + d) + ')' : '') : 'Now') + '</button>').join('') + '</div></div>' +
     '<div class="scroll">' + arcSVG(e, a, S.show, S.delay) + '</div>' +
-    '<p class="note">Illustrative model, not a prediction for this patient. Natural decline is estimated from age, KL grade, inflammation, BMI and joint stability; each option’s effect is a stated assumption (see Evidence on each card). Earlier treatment shows a larger effect because the model assumes LDRT and other anti-inflammatory options work best before structural damage sets in.</p></section>' +
+    '<p class="note">Illustrative model, not a prediction for this patient. Natural decline is estimated from age, KL grade, inflammation, BMI and joint stability; each option’s effect is a stated assumption (see Evidence on each card). Earlier treatment shows a larger effect because the model assumes anti-inflammatory treatment works best before structural damage sets in. The slower structural decline shown for LDRT is a model assumption; no trial has shown that LDRT slows arthritis progression.</p></section>' +
     '<section class="card"><h2>Three years out</h2><p class="sub">Pain (0–10), function (0–100, higher is better), joint health later, and the time each option costs.</p>' +
     '<div class="row" style="margin-bottom:10px"><label for="hourly" style="font-size:13px" class="muted">Value of one hour of the patient’s time</label><div class="unit"><span>$</span><input type="number" id="hourly" value="' + esc(S.hourly) + '" min="0" max="1000" style="width:90px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--surface)"></div></div>' +
-    '<div class="scroll"><table class="tbl"><thead><tr><th>Option</th><th>Pain now → 3 yrs</th><th>Function now → 3 yrs</th><th>Health at ' + (a.age + 10) + '</th><th>Health at ' + (a.age + 20) + '</th><th>Visits (3 yrs)</th><th>Hours</th><th>Time cost</th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" class="muted">Turn on at least one option.</td></tr>') + '</tbody></table></div>' +
+    '<div class="scroll"><table class="tbl"><thead><tr><th>Option</th><th>Pain now → 3 yrs</th><th>Function now → 3 yrs</th>' + (a.ageKnown ? '<th>Health at ' + (a.age + 10) + '</th><th>Health at ' + (a.age + 20) + '</th>' : '<th>Health in 10 yrs</th><th>Health in 20 yrs</th>') + '<th>Visits (3 yrs)</th><th>Hours</th><th>Time cost</th></tr></thead><tbody>' + (rows || '<tr><td colspan="8" class="muted">Turn on at least one option.</td></tr>') + '</tbody></table></div>' +
     '<p class="note">Hours include travel and waiting (about 2 hours per visit; 1.25 for 15–20 minute LDRT sessions). Replacement adds about 6 weeks of recovery time.</p></section>' +
     '<section class="card"><h2>Recommended plan</h2><p class="sub">Generated from the assessment. Untick anything the physician does not want in the patient report.</p><ol class="plan">' +
     steps.map(([k, t, d], i) => { const off = S.planOff.includes(k); return '<li class="' + (off ? 'off' : '') + '"><span class="n">' + (i + 1) + '</span><div><b>' + esc(t) + '</b><p>' + esc(d) + '</p></div><input type="checkbox" aria-label="Include ' + esc(t) + '" data-plan="' + k + '"' + (off ? '' : ' checked') + '></li>'; }).join('') + '</ol>' +
@@ -727,7 +731,7 @@ function reportBody(){
   const rows = S.show.map(id => { const b = burden(id, a, +S.hourly || 0); return '<tr><td><span class="sw" style="background:var(--tx-' + id + ')"></span>' + esc(TX[id].name) + '</td><td style="white-space:normal">' + esc(TX[id].does) + '</td><td class="num">' + b.visits + '</td><td class="num">' + b.hours + ' h</td></tr>'; }).join('');
   return '<div class="rep-head"><img src="' + LOGO_DARK + '" alt="JointGlow" style="height:52px;width:auto"><div style="text-align:right"><div class="eyebrow">Your joint report</div><div class="muted" style="font-size:13px">' + esc(date) + '</div></div></div>' +
     '<h1 style="font-size:28px;font-weight:800;margin:18px 0 4px">' + esc(first === 'Your' ? 'Your knee' : first + ', here is your knee') + '</h1><p class="muted" style="margin:0 0 18px">' + esc(e.side ? e.side + ' knee' : 'Knee') + (e.goal ? ' · Your goal: “' + esc(e.goal) + '”' : '') + '</p>' +
-    '<div class="rep-kpis"><div><div class="rep-big num">' + a.jointAge + '</div><div class="muted">Joint age (you are ' + a.age + ')</div></div><div><div class="rep-big num">' + a.H0 + '<span style="font-size:18px;color:var(--muted)">/100</span></div><div class="muted">Joint health score</div></div></div>' +
+    '<div class="rep-kpis"><div><div class="rep-big num">' + a.jointAge + '</div><div class="muted">' + (a.ageKnown ? 'Joint age (you are ' + a.age + ')' : 'Joint age') + '</div></div><div><div class="rep-big num">' + a.H0 + '<span style="font-size:18px;color:var(--muted)">/100</span></div><div class="muted">Joint health score</div></div></div>' +
     '<h2 class="rep-h">What is going on</h2><p>' + esc(plainDx) + '</p>' +
     '<div class="knees" style="margin:12px 0"><div class="knee">' + kneeSVG({syn:0, cart:0, bone:0, sup:0}, {normal:true, side:kneeOpts(e).side}) + '<div class="cap">A healthy knee</div></div><div class="knee">' + kneeSVG(a.c, kneeOpts(e)) + '<div class="cap">Your knee today</div></div></div>' +
     '<h2 class="rep-h">The four areas of your knee</h2><div class="areas">' + areaRows(a) + '</div>' +
@@ -758,7 +762,7 @@ function reportFile(){
 const FRUIT = ['Banana','Mango','Kiwi','Papaya','Guava','Lychee','Fig','Plum','Quince','Apricot','Durian','Lime'];
 function hash(s){ let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 function deid(){
-  const e = S.e, a = analyze(e), h = hash((e.name || '') + '|' + (e.age || '') + '|' + (e.sex || ''));
+  const e = S.e, a = analyze(e), h = hash((e.name || '') + '|' + (e.sex || ''));   // prototype: a stable identifier such as an MRN should replace the name
   const age = +e.age || null;
   return {
     record_id: FRUIT[h % FRUIT.length] + '-' + String(h % 10000).padStart(4, '0'),
@@ -771,7 +775,7 @@ function deid(){
     function: {walking: e.walking || null, stairs: e.stairs || null, koos_jr: e.prom === '' ? null : e.prom},
     exam: {effusion: e.effusion || null, warmth: e.warmth || null, flexion_deg: e.flexion === '' ? null : e.flexion, extension_deficit_deg: e.extDeficit === '' ? null : e.extDeficit, crepitus: e.crepitus || null, stability: e.stability || null, mcmurray: e.mcmurray || null, quad_strength: e.quad === '' ? null : +e.quad, alignment: e.alignment || null},
     imaging: {modality: e.imaging || null, months_ago: e.imagingMonths === '' ? null : e.imagingMonths, kl_grade: a.kl, min_joint_space_mm: e.jsw === '' ? null : e.jsw, findings: e.findings},
-    assessment: {compartments: a.c, joint_health: a.H0, joint_age_delta: a.jointAge - a.age, ddx: a.ddx.slice(0, 3).map(d => ({id: d.id, icd10: d.icd, fit: d.like})), red_flags: a.flags.map(f => f[0])},
+    assessment: {compartments: a.c, joint_health: a.H0, joint_age: a.jointAge, ddx: a.ddx.slice(0, 3).map(d => ({id: d.id, icd10: d.icd, fit: d.like})), red_flags: a.flags.map(f => f[0])},
     plan: planSteps(e, a).filter(s => !S.planOff.includes(s[0])).map(s => s[0]),
     model_version: 'joint-arc-0.1-illustrative'
   };
@@ -815,7 +819,7 @@ function renderRail(){
     h += '<p class="sub" style="margin:0">Open this page in Claude to draft physician summaries and patient explanations from the encounter.</p>';
   }
   h += '</section>';
-  h += '<section class="card"><h2 style="font-size:15px">At a glance</h2><p class="sub" style="margin:0">Joint age <b class="num">' + a.jointAge + '</b> (actual ' + a.age + ') · health <b class="num">' + a.H0 + '</b> · ' + (a.ddx[0] ? esc(a.ddx[0].name) : 'no diagnosis yet') + (a.flags.length ? ' · <b style="color:var(--sev)">' + a.flags.length + ' red flag' + (a.flags.length > 1 ? 's' : '') + '</b>' : '') + '</p></section>';
+  h += '<section class="card"><h2 style="font-size:15px">At a glance</h2><p class="sub" style="margin:0">Joint age <b class="num">' + a.jointAge + '</b> (' + (a.ageKnown ? 'actual ' + a.age : 'age not recorded') + ') · health <b class="num">' + a.H0 + '</b> · ' + (a.ddx[0] ? esc(a.ddx[0].name) : 'no diagnosis yet') + (a.flags.length ? ' · <b style="color:var(--sev)">' + a.flags.length + ' red flag' + (a.flags.length > 1 ? 's' : '') + '</b>' : '') + '</p></section>';
   $('#rail').innerHTML = h;
 }
 function context(){

@@ -13,7 +13,7 @@ Knee diagnosis and treatment-arc app, published as a Claude artifact: https://cl
 - **Patient report**: plain-language take-home document (download as HTML inside Claude).
 - **Data**: the 10-encounter LDRT course and a de-identified JSON record for the outcomes data set.
 
-The copilot rail tracks 18 items needed for a complete consult note and suggests what to ask next. Inside Claude it can also draft a physician summary or patient explanation (the patient's name is never sent).
+The copilot rail tracks 19 items needed for a complete consult note and suggests what to ask next. Inside Claude it can also draft a physician summary or patient explanation (the patient's name is never sent).
 
 All scores and projections come from an illustrative rules model, not a validated clinical tool. Example patients are synthetic. Data stays in the browser.
 
