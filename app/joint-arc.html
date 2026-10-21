@@ -352,10 +352,10 @@ function compartments(e){
   return {syn:Math.round(clamp(syn,0,100)), cart:Math.round(clamp(cart,0,100)), bone:Math.round(clamp(bone,0,100)), sup:Math.round(clamp(sup,0,100))};
 }
 const AREAS = {
-  syn:{name:'Joint lining & fluid', tech:'Synovium', plain:'The lining makes the fluid that oils the joint. When it is inflamed, the knee swells, stiffens and aches.', treat:'Calming inflammation (LDRT, NSAIDs, short-term steroid shots).'},
-  cart:{name:'Cartilage', tech:'Articular cartilage', plain:'The smooth cushion on the bone ends. It thins with wear and with long-running inflammation.', treat:'Protecting what is left: less inflammation, stronger muscles, healthy weight.'},
-  bone:{name:'Bone', tech:'Subchondral bone', plain:'The bone under the cartilage. It reacts to overload with spurs, hardening and bruise-like lesions.', treat:'Offloading the joint and slowing the arthritis process; replacement at end stage.'},
-  sup:{name:'Muscles, tendons & ligaments', tech:'Supporting structures', plain:'What holds the knee steady and moves it. Weak muscles or a torn meniscus or ligament make it catch or give way.', treat:'Strengthening (physical therapy); surgery for some tears.'}
+  syn:{name:'Joint lining & fluid', short:'Lining', tech:'Synovium', plain:'The lining makes the fluid that oils the joint. When it is inflamed, the knee swells, stiffens and aches.', treat:'Calming inflammation (LDRT, NSAIDs, short-term steroid shots).'},
+  cart:{name:'Cartilage', short:'Cartilage', tech:'Articular cartilage', plain:'The smooth cushion on the bone ends. It thins with wear and with long-running inflammation.', treat:'Protecting what is left: less inflammation, stronger muscles, healthy weight.'},
+  bone:{name:'Bone', short:'Bone', tech:'Subchondral bone', plain:'The bone under the cartilage. It reacts to overload with spurs, hardening and bruise-like lesions.', treat:'Offloading the joint and slowing the arthritis process; replacement at end stage.'},
+  sup:{name:'Muscles, tendons & ligaments', short:'Muscles', tech:'Supporting structures', plain:'What holds the knee steady and moves it. Weak muscles or a torn meniscus or ligament make it catch or give way.', treat:'Strengthening (physical therapy); surgery for some tears.'}
 };
 function sevOf(v){ return v >= 65 ? ['Severe','var(--sev)'] : v >= 40 ? ['Moderate','var(--mod)'] : v >= 20 ? ['Mild','var(--mild)'] : ['Healthy','var(--ok)']; }
 
@@ -430,15 +430,15 @@ const TX = {
   nsaid:{name:'Ibuprofen / NSAIDs', mult:() => 0.97, relief:() => 0.3, onsetY:0, visits:[2,2], hrs:2, oop:'$', onsetTxt:'Days', lasts:'While taking them',
     does:'Pills that reduce inflammation and pain while you take them.', fx:{syn:1, cart:0, bone:0, sup:0},
     ev:'Good short-term pain relief. Long-term daily use raises stomach, kidney and heart risks; guidelines prefer topical NSAIDs where possible (ACR 2019).'},
-  steroid:{name:'Steroid injections', mult:() => 1.1, relief:() => 0.25, onsetY:0, visits:[5,5], hrs:2, oop:'$', onsetTxt:'1–3 days', lasts:'4–8 weeks per shot',
-    does:'A strong anti-inflammatory shot into the joint, given no more often than every 3 months. The arc models a repeated 3-monthly course.', fx:{syn:1, cart:-1, bone:0, sup:0},
+  steroid:{name:'Steroid injections', mult:() => 1.1, relief:() => 0.25, onsetY:0, visits:[5,5], hrs:2, oop:'$', onsetTxt:'1–3 days', lasts:'A few weeks; usually faded by 4–6 weeks',
+    does:'A strong anti-inflammatory shot into the joint, usually given no more often than every 3 months. The arc models a repeated 3-monthly course.', fx:{syn:1, cart:-1, bone:0, sup:0},
     ev:'Guidelines recommend steroid injections for short-term relief of knee OA pain (ACR 2019, OARSI 2019). One 2-year trial of injections every 3 months found more cartilage loss than saline and no better pain control (McAlindon et al., JAMA 2017), so repeated courses are used cautiously.'},
   pt:{name:'Physical therapy', mult:(e,a) => 1 - 0.3*a.c.sup/100 - 0.05, relief:() => 0.3, onsetY:0.15, visits:[16,4], hrs:1.5, oop:'$$', onsetTxt:'4–8 weeks', lasts:'As long as exercises continue',
-    does:'Strengthens the muscles that steady and offload the knee.', fx:{syn:0, cart:1, bone:0, sup:1},
+    does:'Strengthens the muscles that steady and offload the knee.', fx:{syn:0, cart:0, bone:0, sup:1},
     ev:'Strong evidence; exercise is a first-line treatment in every major guideline (ACR 2019, OARSI 2019).'},
   prp:{name:'PRP injections', mult:() => 0.93, relief:() => 0.35, onsetY:0.1, visits:[3,1], hrs:2, oop:'$$$', onsetTxt:'4–6 weeks', lasts:'Unclear',
     does:'Injections made from your own blood platelets.', fx:{syn:1, cart:0, bone:0, sup:0},
-    ev:'Mixed evidence. The largest placebo-controlled trial found no difference from saline at 12 months (Bennell et al., JAMA 2021), and the ACR 2019 guideline recommends against it. Usually self-pay.'},
+    ev:'Mixed evidence. The largest saline-controlled trial to date (288 patients) found no difference from saline in pain or cartilage at 12 months (Bennell et al., JAMA 2021), and the ACR 2019 guideline strongly recommends against it. Usually self-pay.'},
   ldrt:{name:'Low-dose radiation therapy (LDRT)', mult:(e,a,ef) => 1 - 0.45*(a.c.syn/100)*ef, relief:(e,a,ef) => 0.55*ef, onsetY:0.2, visits:[15,1], hrs:1.25, oop:'$$', onsetTxt:'Builds over 6–12 weeks', lasts:'Varies; long-term data come from uncontrolled series. A second course is sometimes given.',
     does:'Ten short, painless sessions of very low-dose X-rays. Thought to reduce inflammation in the joint lining; shown in laboratory studies, not yet confirmed in controlled trials in patients.', fx:{syn:1, cart:0, bone:0, sup:0},
     ev:'Uncontrolled German series (e.g., Keller et al., Radiat Oncol 2013) report pain improvement in a majority of patients, using 0.5–1 Gy fractions to 3–6 Gy; without a sham group the placebo contribution is unknown. A small sham-controlled knee trial (55 patients, 6 × 1 Gy) found no difference from sham at 3 months (Mahler et al., Ann Rheum Dis 2019); a companion hand trial was also negative (Minten et al., 2018). The clinic’s 4.5 Gy in 10 fractions schedule has not been studied in those reports. Evidence is still developing.'},
@@ -481,7 +481,7 @@ function project(e, a, id, delay){
     const base = clamp(a.pain + (a.H0 - H) * 0.08, 0, 10);
     let pain = base;
     if (replaced) pain = 2;
-    else if (tkaAt != null && t >= tkaAt - tx.onsetY) pain = Math.min(10, base + 2);
+    else if (tkaAt != null && t > tkaAt - tx.onsetY) pain = Math.min(10, base + 2);
     else if (t > start && t >= start + tx.onsetY) pain = base * (1 - tx.relief(e, a, ef));
     const fn = clamp(0.55 * H + 45 * (1 - pain / 10), 0, 100);
     out.push({t, H, pain, fn});
@@ -678,7 +678,7 @@ function areaRows(a){
 function viewA(){
   const e = S.e, a = analyze(e);
   const flags = a.flags.map(f => '<div class="flag" role="alert"><span aria-hidden="true">⚠</span><div><b>' + esc(f[0]) + '</b>' + esc(f[1]) + '</div></div>').join('');
-  const ddx = a.ddx.slice(0, 4);
+  const ddx = a.ddx.slice(0, 4); { const sep = a.ddx.find(d => d.id === 'septic'); if (sep && !ddx.includes(sep)) ddx.splice(3, 1, sep); }   // an urgent row is never hidden
   return '<div class="pagehead"><div><span class="eyebrow">Assessment</span><h1>' + esc(e.name || 'Patient') + '’s ' + (e.side === 'Both' ? 'knees' : (e.side ? e.side.toLowerCase() + ' knee' : 'knee')) + '</h1><p>Four areas of the knee, scored from the history and exam, compared with a healthy knee.</p></div></div>' + flags +
     '<div class="kpis"><div class="kpi hero"><div class="v num">' + a.jointAge + ' <small>yrs</small></div><div class="k">Joint age · ' + (a.ageKnown ? 'actual age ' + a.age : 'age not recorded') + '</div></div>' +
     '<div class="kpi"><div class="v num">' + a.H0 + '<small> / 100</small></div><div class="k">Joint health score today</div></div>' +
@@ -697,7 +697,7 @@ function viewA(){
 function viewP(){
   const e = S.e, a = analyze(e), hourly = +S.hourly || 0;
   const cards = TX_ORDER.map(id => { const t = TX[id], on = S.show.includes(id), b = burden(id, a, hourly), w = cautions(id, e, a);
-    const fx = Object.keys(AREAS).map(k => { const v = t.fx[k]; return '<span class="' + (v > 0 ? 'up' : v < 0 ? 'dn' : '') + '">' + (v > 0 ? '↑ ' : v < 0 ? '↓ ' : '') + AREAS[k].name.split(' ')[0].replace(',', '') + '</span>'; }).join('');
+    const fx = Object.keys(AREAS).map(k => { const v = t.fx[k]; return '<span class="' + (v > 0 ? 'up' : v < 0 ? 'dn' : '') + '">' + (v > 0 ? '↑ ' : v < 0 ? '↓ ' : '') + AREAS[k].short + '</span>'; }).join('');
     return '<article class="opt' + (on ? ' on' : '') + '" style="--c:var(--tx-' + id + ')"><header><h3><i></i>' + esc(t.name) + '</h3><button type="button" class="chip" aria-pressed="' + on + '" data-show="' + id + '">' + (on ? 'On arc' : 'Show') + '</button></header><p>' + esc(t.does) + '</p><div class="fx" title="Effect on each area">' + fx + '</div>' +
       '<dl><dt>Works in</dt><dd>' + esc(t.onsetTxt) + '</dd><dt>Lasts</dt><dd>' + esc(t.lasts) + '</dd><dt>Visits, 3 yrs</dt><dd class="num">' + b.visits + ' · ' + b.hours + ' h</dd><dt>Out of pocket</dt><dd>' + esc(t.oop) + '</dd></dl>' +
       w.map(x => '<div class="warn">' + esc(x) + '</div>').join('') + '<details><summary>Evidence</summary><p>' + esc(t.ev) + '</p></details></article>'; }).join('');
@@ -775,7 +775,7 @@ function deid(){
     function: {walking: e.walking || null, stairs: e.stairs || null, koos_jr: e.prom === '' ? null : e.prom},
     exam: {effusion: e.effusion || null, warmth: e.warmth || null, flexion_deg: e.flexion === '' ? null : e.flexion, extension_deficit_deg: e.extDeficit === '' ? null : e.extDeficit, crepitus: e.crepitus || null, stability: e.stability || null, mcmurray: e.mcmurray || null, quad_strength: e.quad === '' ? null : +e.quad, alignment: e.alignment || null},
     imaging: {modality: e.imaging || null, months_ago: e.imagingMonths === '' ? null : e.imagingMonths, kl_grade: a.kl, min_joint_space_mm: e.jsw === '' ? null : e.jsw, findings: e.findings},
-    assessment: {compartments: a.c, joint_health: a.H0, joint_age: a.jointAge, ddx: a.ddx.slice(0, 3).map(d => ({id: d.id, icd10: d.icd, fit: d.like})), red_flags: a.flags.map(f => f[0])},
+    assessment: {compartments: a.c, joint_health: a.H0, joint_age: a.jointAge, ddx: a.ddx.filter((d, i) => i < 3 || d.id === 'septic').map(d => ({id: d.id, icd10: d.icd, fit: d.like})), red_flags: a.flags.map(f => f[0])},
     plan: planSteps(e, a).filter(s => !S.planOff.includes(s[0])).map(s => s[0]),
     model_version: 'joint-arc-0.1-illustrative'
   };

@@ -34,18 +34,18 @@ OPQRST is the standard pain-history mnemonic taught in medical and EMS training:
 
 | Letter | Fields | What the rules use it for |
 |---|---|---|
-| O | onset, duration | Gradual onset supports osteoarthritis; injury onset supports meniscal or ligament injury and argues against an inflammatory OA flare. |
-| P | provokes, palliates | Stairs, chairs and squatting load the patellofemoral joint and cartilage; rest or night pain suggests inflammation. |
-| Q | quality | Locking/catching and giving way are mechanical signs; swelling and stiffness are inflammatory signs; grinding points to cartilage wear. |
+| O | onset, duration | Gradual onset supports osteoarthritis; injury onset supports meniscal or ligament injury and argues against an inflammatory OA flare. Duration is recorded for the checklist and the export but used in no rule. |
+| P | provokes, palliates | Stairs, chairs and squatting load the patellofemoral joint and cartilage; rest or night pain suggests inflammation. "Better with" is recorded but used in no rule. |
+| Q | quality | Locking/catching and giving way are mechanical signs; swelling is an inflammatory sign; grinding points to cartilage wear. The other ticks (aching, sharp/stabbing, burning, throbbing, stiffness) are recorded but used in no rule; stiffness is scored from the morning-stiffness field under T. |
 | R | radiation | Pain in the hip or groin, or travelling up the thigh, raises referred hip pain. |
 | S | pain now, pain worst (0–10) | "Pain now" is the starting point for the pain curve on the arc. "Pain worst" is recorded but not used in any calculation. |
-| T | morning stiffness, pattern | Stiffness under 30 minutes fits OA (Altman 1986 ACR clinical criteria); over 60 minutes raises inflammatory arthritis. Night waking adds to the inflammation and bone scores. |
+| T | morning stiffness, pattern | Stiffness of under 30 or 30–60 minutes adds to the OA flare score (the Altman 1986 ACR clinical criteria use under 30 minutes); over 60 minutes raises inflammatory arthritis; every level also adds to the synovium score (5 / 12 / 18). Night waking adds to the inflammation and bone scores. |
 
-Also captured: prior treatments and number of steroid shots, medical conditions, pregnancy status, walking distance, stairs, and KOOS JR (a 7-item knee score, 0–100, 100 = no problems; validated in knee-replacement patients by Lyman 2016 and widely used for non-operative OA).
+Also captured: prior treatments and number of steroid shots, medical conditions, pregnancy status, walking distance, stairs, and KOOS JR (a 7-item knee score, 0–100, 100 = no problems; validated in knee-replacement patients by Lyman 2016 and widely used for non-operative OA). Of these, only the steroid-shot count (a caution at three or more shots), medical conditions and pregnancy status enter any rule; prior treatments, walking distance, stairs and KOOS JR are recorded for the encounter checklist and the export only.
 
 ### Exam and imaging
 
-Vitals, BMI (from height and weight), effusion, warmth, redness, ability to bear weight, flexion and extension deficit, crepitus, joint-line tenderness, ligament stability, McMurray test, quadriceps strength (MRC 0–5 scale; the app offers grades 1–5), alignment; imaging modality and age, Kellgren–Lawrence grade (0–4; Kellgren & Lawrence 1957), narrowest joint-space width, and listed findings.
+Vitals, BMI (from height and weight), effusion, warmth, redness, ability to bear weight, flexion and extension deficit, crepitus, joint-line tenderness, ligament stability, McMurray test, quadriceps strength (MRC 0–5 scale; the app offers grades 1–5), alignment; imaging modality and age, Kellgren–Lawrence grade (0–4; Kellgren & Lawrence 1957), narrowest joint-space width, and listed findings. Extension deficit, diastolic blood pressure and heart rate are recorded but not scored.
 
 ### How blank fields are treated
 
@@ -53,7 +53,7 @@ This matters because the app can be used mid-intake.
 
 | Field | If blank |
 |---|---|
-| Age | No age-based points anywhere (cartilage score, differential). The LDRT plan step and the under-40 caution require age to be entered; the card shows "Age not recorded" instead. The curves use 50 only to draw the arc. |
+| Age | No age-based points in the cartilage score or the differential. The LDRT plan step and the under-40 caution require age to be entered; the card shows "Age not recorded" instead. The arc assumes age 50, which adds 0.34 health points a year to the natural decline (0.85 × 0.04 × 10) and lowers the LDRT early factor by 0.06 (0.12 at a 5-year start, 0.18 at 10); every curve, the projection table and the replacement timing are affected even though the LDRT plan step is suppressed. |
 | KL grade | Counts as 0 in the decline rate and the early factor, and switches off the KL branch of the replacement rule. In the cartilage score, 15 points if "grinding" is reported, otherwise 5. |
 | Height or weight | BMI treated as 25 (no BMI points). |
 | Pain now | Arc starts from 5/10. |
@@ -123,7 +123,7 @@ Rationale: these are the radiographic and MRI features of bone response to overl
 
 Severity labels (`sevOf`, line 360): 0–19 Healthy, 20–39 Mild, 40–64 Moderate, 65–100 Severe.
 
-## 5. Joint health score and joint age (`analyze`, lines 412–423)
+## 5. Joint health score and joint age (`analyze`, lines 412–422)
 
 ```
 health   = round( clamp( 100 − (0.20·syn + 0.35·cart + 0.25·bone + 0.20·sup), 5, 100 ) )
@@ -155,11 +155,11 @@ Ten candidate diagnoses each have a list of rules. Each rule that fires adds its
 | Referred from hip (M25.55-) | hip/groin pain (+3); pain up the thigh (+2); hip listed as painful (+2); knee imaging near normal, KL ≤1 (+1) |
 | Septic arthritis (M00.9), marked Urgent | fever/unwell (+3); temperature ≥38 °C (+3); warm (+2); red (+1); moderate/large effusion (+2); sudden onset without injury (+1); cannot bear weight (+1). Shown only when the score is ≥5 **and** there is a joint sign on exam (warm, or moderate/large effusion). |
 
-Age rules fire only when age has been entered. Each row also carries a "confirm with" next step (ultrasound, MRI, aspiration, labs, hip X-ray) so the differential leads somewhere.
+Age rules fire only when age has been entered, and KL rules (KL 1–3, KL ≥2, KL ≤1, KL ≤2) only when a grade has been entered; a blank grade is not treated as 0, so the "little arthritis on imaging" points for patellofemoral, pes anserine and referred hip pain are not given until imaging is graded. Each row also carries a "confirm with" next step (ultrasound, MRI, aspiration, labs, hip X-ray) so the differential leads somewhere.
 
 Worked septic examples: fever plus a warm knee = 5, shown and flagged. An acutely hot, swollen, non-weight-bearing knee without fever = 2 + 2 + 1 + 1 = 6, shown and flagged. A chronic OA knee that is warm with a moderate effusion, gradual onset, bearing weight = 4, not shown. Fever with no joint sign is not shown.
 
-Rationale and sources: the pattern recognition here is standard clinical teaching. OA clinical criteria (age, stiffness under 30 minutes, crepitus) follow Altman 1986. Morning stiffness over an hour as an inflammatory feature follows the classic RA criteria. The septic rule follows the principle that a hot, swollen joint needs aspiration before anything else; the afebrile pathway was added because fever has a pooled sensitivity of only about 57% for septic arthritis (Margaretten 2007), so roughly four in ten septic joints are afebrile. The rule still lacks the risk factors Margaretten found most useful (recent injection or surgery, prosthetic joint, overlying skin infection, immunosuppression) because the intake does not capture them yet. The point values and the 70%/40% label cut-offs are mine. This is a scoring heuristic, not a Bayesian or likelihood-ratio model; it does not use published sensitivities or specificities.
+Rationale and sources: the pattern recognition here is standard clinical teaching. OA clinical criteria (age, stiffness under 30 minutes, crepitus) follow Altman 1986. Morning stiffness over an hour as an inflammatory feature follows the classic RA criteria. The septic rule follows the principle that a hot, swollen joint needs aspiration before anything else; the afebrile pathway was added because fever has a pooled sensitivity of only about 57% for septic arthritis (Margaretten 2007), so roughly four in ten septic joints are afebrile. The rule still lacks the risk factors Margaretten quantified (age over 80, diabetes, rheumatoid arthritis, recent joint surgery, a hip or knee prosthesis, especially with overlying skin infection, and HIV infection), plus recent intra-articular injection, which other sources add, because the intake does not capture most of them yet. The point values and the 70%/40% label cut-offs are mine. This is a scoring heuristic, not a Bayesian or likelihood-ratio model; it does not use published sensitivities or specificities.
 
 ## 7. Red flags (`redFlags`, lines 404–411)
 
@@ -167,7 +167,7 @@ Shown as an alert banner and listed first in the plan. Red flags suppress the LD
 
 | Flag | Trigger |
 |---|---|
-| Possible joint infection | The septic arthritis row is in the differential (same test as above, so the two always agree) |
+| Possible joint infection | The septic arthritis row passes the differential's test (score ≥5 with a joint sign). The row is always shown among A–D when it passes (it takes the fourth slot if four other diagnoses outscore it) and is always included in the exported record, so the banner never appears without a visible row. |
 | Possible fracture | cannot bear weight AND onset after injury (one of the Ottawa knee rule criteria; Stiell 1996) |
 | Night pain with weight loss | unexplained weight loss AND (wakes at night OR rest/night pain) |
 | Hot red joint | red skin AND sudden onset without injury |
@@ -206,9 +206,9 @@ decline = 0.85 × ( 0.5
                  + 0.3 if support score > 40 )
 ```
 
-Rationale: age, radiographic grade, obesity and instability are widely taught risk factors for knee OA and were chosen for direction only. The published progression evidence is more mixed than that: the Bastick 2015 meta-analysis found strong evidence for baseline knee pain, Heberden's nodes and varus alignment as progression factors, and strong evidence of no association for joint laxity; synovitis as a progression factor comes from MRI cohort studies (for example, Roemer 2011). The coefficients are not from any of these papers.
+Rationale: age, radiographic grade, obesity and instability are widely taught risk factors for knee OA and were chosen for direction only. The published progression evidence is more mixed than that: the Bastick 2015 meta-analysis found strong evidence for baseline knee pain, Heberden's nodes and varus alignment as progression factors, and strong evidence of no association for joint laxity; synovitis and effusion as risk factors for cartilage loss come from MRI cohort studies (for example, Roemer 2011, in knees without radiographic OA at baseline). The coefficients are not from any of these papers.
 
-What the formula gives: a 45-year-old with KL 2, mild synovitis (score 20–39), BMI 25 and no instability loses about 1.3–1.5 points a year before acceleration; the rate reaches about 2 points a year only when obesity (BMI 30) and instability are added. From a starting health of 60 such a patient crosses the end-stage band (below 40 on the chart) in roughly 15 years untreated; from 70 the untreated curve does not reach it within the 20-year window.
+What the formula gives: a 45-year-old with KL 2, mild synovitis (score 20–39), BMI 25 and no instability loses about 1.3–1.5 points a year before acceleration; the rate reaches about 2 points a year only when obesity (BMI 30) and instability are added. From a starting health of 60 such a patient crosses the end-stage band (below 40 on the chart) in 13–15 years untreated; from 70 the untreated curve ends the 20-year window at about 40–42, crossing 40 only at the top of that synovitis range. If age is blank, both this formula and the early factor use 50 (see section 3).
 
 Decline accelerates as the joint worsens: each step multiplies by `1 + 0.4 × (points lost so far / 100)`.
 
@@ -220,24 +220,27 @@ Each option has a multiplier on the decline rate, a fraction of pain relieved, a
 |---|---|---|---|---|
 | No treatment | 1.00 | 0 | — | OA usually progresses slowly |
 | NSAIDs | 0.97 | 30% | 0 | Short-term relief; GI, renal, cardiac risk with chronic use; topical preferred (ACR 2019) |
-| Steroid injections | **1.10 (faster loss)** | 25% | 0 | Guidelines recommend them for short-term relief (ACR 2019, OARSI 2019); 3-monthly triamcinolone for 2 years caused more cartilage loss than saline with no pain benefit (McAlindon 2017), so repeated courses are used cautiously. The arc models the repeated 3-monthly course. |
+| Steroid injections | **1.10 (faster loss)** | 25% | 0 | Guidelines recommend them for short-term relief (ACR 2019, OARSI 2019); 3-monthly triamcinolone for 2 years caused more cartilage loss than saline with no pain benefit (McAlindon 2017), so repeated courses are used cautiously. |
 | Physical therapy | 1 − 0.3 × sup/100 − 0.05 | 30% | 0.15 | First-line in every guideline (ACR 2019, OARSI 2019) |
 | PRP | 0.93 | 35% | 0.10 | No difference from saline at 12 months (Bennell 2021); ACR 2019 recommends against it |
 | LDRT | 1 − 0.45 × (syn/100) × early | 55% × early | 0.20 | See LDRT note below |
 | Stem cells | 0.96 | 30% | 0.20 | Limited, low-quality evidence; ACR 2019 strongly recommends against; not FDA-approved for OA |
 | Knee replacement | special | pain → 2 after surgery | 0.5 | Strong for end-stage; about 1 in 5 dissatisfied (Bourne 2010) |
 
-Each card also shows a one-line description, ↑/↓ chips for the four areas (`fx`, display only, used in no calculation), a "Works in" onset, a "Lasts" duration and an out-of-pocket tier. These are clinical claims shown to patients and need the same review as the evidence notes:
+Each card also shows a one-line description, ↑/↓ chips for the four areas (`fx`, display only, used in no calculation), a "Works in" onset, a "Lasts" duration and an out-of-pocket tier. These are clinical claims shown to patients and need the same review as the evidence notes. The steroid card's description, which is always visible, says the shot is "usually given no more often than every 3 months" and that "the arc models a repeated 3-monthly course".
 
-| Option | Works in | Lasts | Chips |
-|---|---|---|---|
-| NSAIDs | Days | While taking them | ↑ lining |
-| Steroid injections | 1–3 days | 4–8 weeks per shot | ↑ lining, ↓ cartilage |
-| Physical therapy | 4–8 weeks | As long as exercises continue | ↑ cartilage, ↑ muscles |
-| PRP | 4–6 weeks | Unclear | ↑ lining |
-| LDRT | Builds over 6–12 weeks | Varies; long-term data come from uncontrolled series; a second course is sometimes given | ↑ lining |
-| Stem cells | 1–3 months | Unclear | ↑ lining |
-| Knee replacement | 3–6 months recovery | Most implants last 15–20+ years | ↑ lining, ↑ cartilage, ↑ bone |
+| Option | Works in | Lasts | Out of pocket | Chips |
+|---|---|---|---|---|
+| No treatment | — | — | — | none |
+| NSAIDs | Days | While taking them | $ | ↑ Lining |
+| Steroid injections | 1–3 days | A few weeks; usually faded by 4–6 weeks | $ | ↑ Lining, ↓ Cartilage |
+| Physical therapy | 4–8 weeks | As long as exercises continue | $$ | ↑ Muscles |
+| PRP | 4–6 weeks | Unclear | $$$ | ↑ Lining |
+| LDRT | Builds over 6–12 weeks | Varies; long-term data come from uncontrolled series; a second course is sometimes given | $$ | ↑ Lining |
+| Stem cells | 1–3 months | Unclear | $$$$ | ↑ Lining |
+| Knee replacement | 3–6 months recovery | Most implants last 15–20+ years | Insurance; high total cost | ↑ Lining, ↑ Cartilage, ↑ Bone |
+
+Chip labels are the short area names (Lining, Cartilage, Bone, Muscles). On the quarter-year grid every non-surgical onset (0 to 0.2 years) resolves to the same first step after the start line, so relief for all seven non-surgical options begins 0.25 years after the start, and the decline multiplier also begins at that step; the onset values differ only in the card text, not on the arc or in the table.
 
 **The "early intervention" factor** (`early`, line 425):
 
@@ -249,9 +252,9 @@ This is what makes LDRT look better for patients who are younger and at a lower 
 
 **LDRT evidence, as stated on the card:** uncontrolled German series (Keller 2013 is the example named) report pain improvement in a majority of patients, using 0.5–1 Gy fractions to 3–6 Gy; without a sham group the placebo contribution is unknown. A small sham-controlled knee trial (55 patients, 6 × 1 Gy) found no difference from sham at 3 months (Mahler 2019); a companion hand trial was also negative (Minten 2018). The card states that the clinic's 4.5 Gy in 10 fractions schedule has not been studied in those reports, and that evidence is still developing. The card's description says LDRT is "thought to reduce inflammation in the joint lining; shown in laboratory studies, not yet confirmed in controlled trials in patients", because both Dutch trials measured synovial inflammation on imaging and found no change.
 
-**The LDRT decline multiplier is a model assumption with no human evidence behind it.** No trial has shown that LDRT slows radiographic or MRI progression of knee OA. The chart note says so. The LDRT card's chips show only ↑ lining for the same reason.
+**The LDRT decline multiplier is a model assumption with no human evidence behind it.** No trial has shown that LDRT slows radiographic or MRI progression of knee OA. The chart note says so. The LDRT card's chips show only ↑ Lining for the same reason, and the physical-therapy card shows only ↑ Muscles because exercise trials show pain and function benefit, not cartilage protection.
 
-**Knee replacement** (`tkaEligible`, line 461): offered as "indicated now" when KL ≥3 and health <50, or health <38. On the arc, replacement resets health to 82, after which it declines 0.4 points a year (implant wear), and pain drops to 2. For the six months before the reset, pain is raised by 2 to represent the pre-operative and recovery period. If not currently eligible, the arc runs the untreated curve from today (the start-delay toggle is ignored on this path), finds the first quarter-year step at which health is at or below 35, and places the reset 0.5 years after that point; if the untreated curve never reaches 35 within 20 years, no replacement is drawn and the replacement curve is identical to no treatment.
+**Knee replacement** (`tkaEligible`, line 461): offered as "indicated now" when KL ≥3 and health <50, or health <38. On the arc, replacement resets health to 82, after which it declines 0.4 points a year (implant wear), and pain drops to 2. For the six months before the reset (starting at the first step after today, so "pain now" in the table is always the recorded pain), pain is raised by 2 to represent the pre-operative and recovery period. If not currently eligible, the arc runs the untreated curve from today (the start-delay toggle is ignored on this path), finds the first quarter-year step at which health is at or below 35, and places the reset 0.5 years after that point; if the untreated curve never reaches 35 within 20 years, no replacement is drawn and the replacement curve is identical to no treatment.
 
 ### Pain and function curves
 
@@ -280,13 +283,13 @@ Visits over 3 years = first-year visits + 2 × later-year visits. Hours = visits
 
 The 240 h is added only when the patient is replacement-eligible today. For a patient who is not yet eligible, the replacement row shows 32 visits and 64 h with no recovery time even though the arc still places a replacement later; this should be reworked when the burden model is revisited. The LDRT visit count follows the course in the discovery document (consult, simulation, 10 fractions, follow-ups); the others are typical schedules. All are estimates.
 
-## 10. Plan and cautions (`cautions`, lines 453–460; `planSteps`, lines 497–516)
+## 10. Plan and cautions (`cautions`, lines 453–460; `planSteps`, lines 497–514)
 
 Plan steps appear in this order when their condition holds:
 
 1. Resolve red flags (any flag).
 2. Orthopedic / sports medicine review (leading diagnosis is meniscal or ligament).
-3. **LDRT** when all of: age entered and ≥40, pregnancy not recorded as "Yes" or "Unsure", no prior radiation to this knee, osteoarthritis is the leading or second diagnosis, and no red flags. The text names the radiation oncology consult (CPT 77263), states that the prescription is set by the physician, and quotes the protocol most often seen in the de-identified charts, 4.5 Gy in 10 fractions over 2–3 weeks. Other painful joints listed by the patient, except the spine, are added to the same step.
+3. **LDRT** when all of: age entered and ≥40, pregnancy not recorded as "Yes" or "Unsure", no prior radiation to this knee, osteoarthritis is the leading or second diagnosis, and no red flags. The text names the radiation oncology consult (CPT 77263), states that the prescription is set by the physician, and quotes the protocol most often seen in charts, 4.5 Gy in 10 fractions over 2–3 weeks. Other painful joints listed by the patient, except the spine, are added to the same step.
 4. Simulation and mapping X-rays (CPT 77290), with LDRT.
 5. Weight-bearing X-rays when there is no imaging or it is over 12 months old.
 6. Physical therapy, 6–8 weeks of quadriceps and hip strengthening, when support score ≥25 or cartilage score ≥40.
@@ -298,19 +301,19 @@ The clinician can untick any step. Unticked steps are dropped from the patient r
 
 Patient-specific cautions on the option cards: NSAIDs with GI bleed, kidney disease, blood thinners or heart disease; steroid shots with diabetes or three or more prior shots; LDRT when age is not recorded, under age 40, possible pregnancy ("Yes" or "Unsure"), or prior radiation to the knee; replacement when not yet indicated. The age-40 line for LDRT follows the general practice of avoiding radiation for benign disease in younger patients; the clinic's own policy should replace it.
 
-## 11. Encounter checklist (`REQ`, lines 517–538)
+## 11. Encounter checklist (`REQ`, lines 517–537)
 
 Nineteen items a complete consult note needs, each with the plain-language question to ask. They cover age, OPQRST, prior treatment, history, pregnancy status, function baseline, laterality, vitals, height and weight, swelling, range of motion, stability, imaging with KL grade, and consent.
 
-Completion rules: Onset needs both onset and duration; Severity needs only today's pain (worst pain is asked but not required); Timing is met by either morning stiffness or a timing pattern; Function is met by either walking distance or KOOS JR; Vitals need systolic BP, heart rate and temperature (diastolic is not checked); Swelling needs both effusion and warmth recorded; Imaging needs a modality other than "None yet" and a KL grade; Consent is met by "Discussed" or "Signed". The pregnancy item is satisfied automatically when sex is anything other than "Female" (including blank) or age is 55 or over; it only prompts for women aged 18–54, and the 55-year cut-off is a design choice.
+Completion rules: Onset needs both onset and duration; "Worse / better with" is met by either a provoking or a palliating factor; Severity needs only today's pain (worst pain is asked but not required); Timing is met by either morning stiffness or a timing pattern; Function is met by either walking distance or KOOS JR; Vitals need systolic BP, heart rate and temperature (diastolic is not checked); Swelling needs both effusion and warmth recorded; Imaging needs a modality other than "None yet" and a KL grade; Consent is met by "Discussed" or "Signed". The pregnancy item is satisfied automatically when sex is anything other than "Female" (including blank) or age is 55 or over; it only prompts for patients recorded as Female whose age is under 55 or not yet entered, and the 55-year cut-off is a design choice.
 
 The list is a first draft of the billing and documentation criteria the design notes mention; the clinic's billing requirements should replace it.
 
-## 12. De-identified record (`hash`, `deid`, lines 763–783)
+## 12. De-identified record (`hash`, `deid`, lines 763–782)
 
 What the export does:
 - The name and sex are hashed (FNV-1a) into a codename such as "Banana-4127". The same name and sex always give the same codename, which links encounters in this prototype; a misspelled name breaks the link, and two patients with the same name and sex collide. A stable identifier such as a medical record number should replace the name as the hash input.
-- Age becomes a five-year band; BMI becomes a band. The assessment block exports `joint_health` and `joint_age` (joint age is a fixed function of joint health, so exporting it adds no information).
+- Age becomes a five-year band; BMI becomes a band. The assessment block exports the four area scores, `joint_health` and `joint_age` (joint age is a fixed function of joint health, so exporting it adds no information), the top three differential rows plus the septic row whenever it passes (id, ICD-10 code and label), and the red-flag names.
 - The only location captured is the free-text Country box, exported as typed; no city or address field exists, but a city typed into that box would be exported.
 - No dates are captured. The record carries a constant `encounter: 1` and `day_offset: 0` as placeholders for a future multi-encounter format, and imaging age is exported in months as entered.
 
@@ -342,8 +345,9 @@ Progression evidence behind the decline formula (direction only, not coefficient
 - Felson DT, et al. Bone marrow edema and its relation to progression of knee osteoarthritis. *Ann Intern Med* 2003;139:330–36.
 - Bastick AN, et al. What are the prognostic factors for radiographic progression of knee osteoarthritis? A meta-analysis. *Clin Orthop Relat Res* 2015;473:2969–89.
 - Roemer FW, et al. Presence of MRI-detected joint effusion and synovitis increases the risk of cartilage loss in knees without osteoarthritis at 30-month follow-up: the MOST study. *Ann Rheum Dis* 2011;70:1804–09. (Verify.)
+- Ott OJ, Niewald M, Weitmann HD, et al. DEGRO guidelines for the radiotherapy of non-malignant disorders. Part II: painful degenerative skeletal disorders. *Strahlenther Onkol* 2015;191:1–6. (Verify pages.)
 
-Regimen note: the German series and the DEGRO guidance on benign-disease radiotherapy use 0.5–1.0 Gy per fraction to 3–6 Gy total, and both Dutch sham trials used 6 × 1 Gy. The clinic's 4.5 Gy in 10 fractions schedule (0.45 Gy per fraction) is not the regimen behind the published figures, and the app says so.
+Regimen note: the German series and the DEGRO guideline on benign-disease radiotherapy (Ott 2015) use 0.5–1.0 Gy per fraction to 3–6 Gy total, and both Dutch sham trials used 6 × 1 Gy. The clinic's 4.5 Gy in 10 fractions schedule (0.45 Gy per fraction) is not the regimen behind the published figures, and the app says so.
 
 JointGlow material:
 - PAteam × JointGlow, *LDRT Clinic Workflow, as We Understand It* (Discovery, October 2026): the 4.5 Gy / 10 fraction protocol, CPT codes, visit sequence, tissue-depth measurement.
@@ -386,4 +390,6 @@ Six review passes compared the first draft of this document with the code and ch
 3. **Infection flag and septic row disagreed, and neither could fire without fever.** Both now use one test (septic score ≥5 with a joint sign), and an acutely hot, swollen, non-weight-bearing knee reaches it without fever.
 4. **Delayed start ignored ageing.** The "start in 5 / 10 years" toggle did not change the LDRT effect. The early factor now uses the patient's age at the start of treatment.
 
-Card wording was also corrected: LDRT no longer claims to "calm the inflamed joint lining" as fact, no longer gives a 60–80% response figure or a "1–2 years" duration, and states that the clinic's schedule differs from the published regimens; steroid injections now cite the guideline recommendation for them; PRP and stem-cell cards cite the ACR 2019 recommendations against; the LDRT structural effect on the arc is labelled as a model assumption.
+Card wording was also corrected: LDRT no longer claims to "calm the inflamed joint lining" as fact, no longer gives a 60–80% response figure or a "1–2 years" duration, and states that the clinic's 4.5 Gy in 10 fractions schedule has not been studied in the reports it cites; steroid injections now cite the guideline recommendation for them; PRP and stem-cell cards cite the ACR 2019 recommendations against; the LDRT structural effect on the arc is labelled as a model assumption.
+
+A second pass (23 further items, nearly all precision in this document) led to these further code changes: the synovium chip label read "Joint" (the first word of the area name) and now reads "Lining"; the physical-therapy card no longer shows an "↑ Cartilage" chip; the steroid card says "usually given no more often than every 3 months" and "a few weeks; usually faded by 4–6 weeks"; the PRP card gives the trial size and the strength of the ACR recommendation; the septic arthritis row is always shown and exported when it passes its test; and the replacement row's "pain now" no longer includes the pre-operative +2.
