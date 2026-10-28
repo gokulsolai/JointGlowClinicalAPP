@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dev-dist/
+# MediaPipe WASM runtime is copied from node_modules at dev/build time (see scripts/copy-wasm.mjs)
+public/wasm/
+# Playwright test output
+tests/output/
+.DS_Store
+*.log
